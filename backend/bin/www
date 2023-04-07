@@ -3,6 +3,7 @@ var app = require('../app');
 var log = require('../logger');
 var http = require('http');
 const socketIO = require('socket.io');
+const spaceModel = require('../models/spaceModel');
 const {initSocket} = require('../socket');
 
 var port = normalizePort(process.env.PORT || '3000');
@@ -16,6 +17,37 @@ const io = socketIO(server, {
 	}
 });
 initSocket(io);
+
+io.on('connection', (socket) => {
+	// log.info('A client connected');
+	socket.on('getInitialHomeData', async (id) => {
+		try {
+			let space = await spaceModel.findById(id).populate('seats');
+			if (!space){
+				log.error('Space not found');
+			} else {
+				socket.emit('initialHomeData', space);
+			}
+		} catch (error) {
+			log.error('Failed to fetch data:', error);
+		}
+	});
+	socket.on('homeDataUpdated', async (id) => {
+		try {
+			let space = await spaceModel.findById(id).populate('seats');
+			if (!space){
+				log.error('Space not found');
+			} else {
+				socket.emit('homeDataUpdated', space);
+			}
+		} catch (error) {
+			log.error('Failed to fetch data:', error);	
+		}
+	});
+	socket.on('disconnect', () => {
+		// log.info('A client disconnected');
+	});
+});
 
 server.listen(port);
 server.on('error', onError);
