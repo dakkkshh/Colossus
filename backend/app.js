@@ -9,6 +9,7 @@ require('dotenv').config();
 
 const { error } = require('./response');
 const log = require('./logger');
+const userModel = require('./models/userModel');
 
 var app = express();
 
@@ -48,7 +49,14 @@ app.use((req, res, next) => {
 					return error(res, 401, 'Unauthorized');
 				}
 				try {
-					return next();
+					let doc = await userModel.findById(decoded.id).exec();
+					if (doc) {
+						req.user = doc;
+						return next();
+					} else {
+                        res.clearCookie('jwt');
+					    error(res, 404, 'User not found');
+                    }
 				} catch (err) {
 					log.error(err);
 					res.clearCookie('jwt');
