@@ -4,13 +4,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
 import { useDispatch, useSelector } from 'react-redux';
 import Login from './pages/Login';
-import BookNow from './pages/BookNow'
+import BookNow from './pages/BookNow';
 import Main from './layout/Main';
 import React, { useEffect, useState } from 'react';
+import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import Profile from './pages/Profile';
 import Bookings from './pages/Bookings';
 import ManageSpaces from './pages/ManageSpaces';
+import AdminPanel from './pages/AdminPanel';
 import { message } from 'antd';
 import { _fetch } from './_fetch';
 import { login } from './store/action/user';
@@ -86,11 +88,17 @@ function App() {
         <Routes>
           <Route exact path='/login' element={<Login />} />
           <Route exact path='/booknow' element={<BookNow />} />
+          <Route exact path='/' element={<LayoutWrapper children={<Home />} email={email} />} />
           <Route exact path='/profile' element={<LayoutWrapper children={<Profile />} email={email} />} />
           <Route exact path='/bookings' element={<LayoutWrapper children={<Bookings />} email={email} />} />
           {
             role === user_roles.ADMIN && (
               <Route exact path='/manage-spaces' element={<LayoutWrapper children={<ManageSpaces />} email={email} />} />
+            ) 
+          }
+          {
+            role === user_roles.ADMIN && (
+              <Route exact path='/admin-panel' element={<LayoutWrapper children={<AdminPanel />} email={email} />} />
             ) 
           }
           <Route path='*' element={<NotFound />} />
