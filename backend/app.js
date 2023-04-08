@@ -10,6 +10,7 @@ require('dotenv').config();
 const { error } = require('./response');
 const log = require('./logger');
 var userRouter = require('./routes/user');
+var spaceRouter = require('./routes/space');
 const userModel = require('./models/userModel');
 
 var app = express();
@@ -71,6 +72,7 @@ app.use((req, res, next) => {
 });
 //Routes
 app.use('/api/user', userRouter);
+app.use('/api/space', spaceRouter);
 
 
 
