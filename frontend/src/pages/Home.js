@@ -288,6 +288,7 @@ export default function Home() {
                                         bodyStyle={{
                                             padding: '8px',
                                         }}
+                                        bordered={false}
                                     >
                                         <div
                                             style={{
