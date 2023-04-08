@@ -140,8 +140,6 @@ router
         }
     )
     .get(
-        jwtVerify,
-        isAdmin,
         async (req, res) => {
             try {
                 let { populateSeats, includeColossus } = req.query;

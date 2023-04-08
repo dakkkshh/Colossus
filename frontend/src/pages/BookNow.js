@@ -1,29 +1,69 @@
-import { Card, Col, Form, Row, Input, Dropdown, Button, message } from "antd";
-import { bgColor, cardColor, darkColor, highlightBg, lightColor } from "../constants/colors";
-import { useState } from "react";
+import { Card, Typography, Col, Form, Row, Input, Dropdown, Button, message } from "antd";
+import { bgColor, cardColor, darkColor, highlightBg, itemColor, lightColor } from "../constants/colors";
+import { useEffect, useState } from "react";
 import { BsBuildings, BsClock, BsLightningCharge } from "react-icons/bs";
 import { HiOutlineDesktopComputer } from "react-icons/hi";
+import { GiDuration } from "react-icons/gi";
+import moment from "moment";
+import { _fetch } from "../_fetch";
+import { seat_status } from "../constants/seat_status";
+import Lottie from "react-lottie";
+import * as animationData from '../assets/lottie/booknow.json';
 
-
+const { Title } = Typography;
 function BookNow() {
-    const [spaceSelectedKey, setspaceSelectedKey] = useState('0');
-    const [timeSelectedKey, setTimeSelectedKey] = useState('0');
-    const [durationSelectedKey, setDurationSelectedKey] = useState('0');
+    const [spaceSelectedKey, setspaceSelectedKey] = useState('');
+    const [avlSeats, setAvlSeats] = useState(0);
+    const [timeSelectedKey, setTimeSelectedKey] = useState('T0');
+    const [durationSelectedKey, setDurationSelectedKey] = useState('D0');
     const [space, setSpace] = useState('Choose Space');
+    const [spaces, setSpaces] = useState([]);
     const [time, setTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [loading, setLoading] = useState(false);
     const [electricity, setElectricity] = useState(false);
     const [computer, setComputer] = useState(false);
 
+    const init = async () => {
+        try {
+            setLoading(true);
+            let res = await _fetch(`${process.env.REACT_APP_API_URL}/space?populateSeats=1`, {
+                method: 'GET'
+            });
+            res = await res.json();
+            if (res.status === 200) {
+                const updatedSpaces = res.response?.map((item) => {
+                    const avlSeats = item.seats?.reduce((acc, seat) => {
+                        if (seat.seatStatus === seat_status.AVAILABLE){
+                            return acc+1;
+                        }
+                        return acc;
+                    },0);
+                    return {
+                        ...item,
+                        available_seats: avlSeats
+                    }
+                }, []);
+                setSpaces(updatedSpaces);
+            } else {
+                message.error(res.response);
+            }
+        } catch (err) {
+            console.log(err);
+            message.error('Something went wrong while fetching spaces');
+        } finally {
+            setLoading(false);
+        }
+    }
 
-    function getSpaceItems(label, key) {
+
+    function getSpaceItems(item) {
         return {
-            label,
-            key,
+            label: item.name,
+            key: item._id,
             style: {
-                backgroundColor: spaceSelectedKey === key ? highlightBg : 'transparent',
-                color: spaceSelectedKey === key ? darkColor : lightColor,
+                backgroundColor: spaceSelectedKey === item._id ? highlightBg : 'transparent',
+                color: spaceSelectedKey === item._id ? darkColor : lightColor,
             }
         }
     }
@@ -51,43 +91,34 @@ function BookNow() {
         }
     }
 
-    const spaceMenuItems = [
-        getSpaceItems('KRC Cubicles', '1'),
-        getSpaceItems('Study Room', '2'),
-        getSpaceItems('IT Cell - 1', '3'),
-        getSpaceItems('IT Cell - 2', '4'),
-        getSpaceItems('IT Cell - 3', '5'),
-    ];
+
+
+    const spaceMenuItems = spaces.map((item) => getSpaceItems(item));
 
     const timeMenuItems = [
-        getTimeItems(5, '1'),
-        getTimeItems(10, '2'),
-        getTimeItems(15, '3'),
-        getTimeItems(20, '4'),
-        getTimeItems(25, '5'),
-        getTimeItems(30, '6'),
-        getTimeItems(35, '7'),
-        getTimeItems(40, '8'),
-        getTimeItems(45, '9'),
-        getTimeItems(50, '10'),
-        getTimeItems(55, '11'),
-        getTimeItems(60, '12'),
+        getTimeItems(10, 'T1'),
+        getTimeItems(20, 'T2'),
+        getTimeItems(30, 'T3'),
+        getTimeItems(40, 'T4'),
+        getTimeItems(50, 'T5'),
+        getTimeItems(60, 'T6'),
     ];
 
-    const durationMenuItems = [ 
-        getDurationItems(0.5, '1'),
-        getDurationItems(1, '1'),
-        getDurationItems(1.5, '1'),
-        getDurationItems(2, '2'),
-        getDurationItems(2.5, '2'),
-        getDurationItems(3, '3'),
+    const durationMenuItems = [
+        getDurationItems(0.5, 'D1'),
+        getDurationItems(1, 'D2'),
+        getDurationItems(1.5, 'D3'),
+        getDurationItems(2, 'D4'),
+        getDurationItems(2.5, 'D5'),
+        getDurationItems(3, 'D6'),
     ];
-        
+
 
     const handleSpaceMenuItemClick = (key) => {
         setspaceSelectedKey(key);
-        const item = spaceMenuItems.find((item) => item.key === key);
-        setSpace(item.label);
+        const item = spaces.find((item) => item._id === key);
+        setAvlSeats(item?.available_seats);
+        setSpace(item.name);
     }
 
     const handleTimeMenuItemClick = (key) => {
@@ -101,343 +132,428 @@ function BookNow() {
         const item = durationMenuItems.find((item) => item.key === key);
         setDuration(item.value);
     }
-        
+
 
     const onSubmit = (values) => {
         setLoading(true);
-        console.log(values);
+        const timeOpted = moment().add(time, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+        console.log({
+            roll_number: values.rollno,
+            email: values.email,
+            space: spaceSelectedKey,
+            expiresAt: moment(timeOpted).add(duration, 'hours').format('YYYY-MM-DD HH:mm:ss'),
+            timeOpted: timeOpted,
+            isElectricityOpted: electricity,
+            isComputerOpted: computer
+        });
         message.success('Booking Successful');
 
         setTimeout(() => {
             setLoading(false);
         }, 2000);
     }
+
+    useEffect(() => {
+        init();
+    }, []);
+
     return (
         <div
             style={{
                 minHeight: '100vh',
                 backgroundColor: bgColor,
-                width: '100%',
-                padding: '0px 16px',
+                width: '100vw',
             }}
             className="d-flex justify-content-center align-items-center"
         >
             <Card
                 style={{
                     backgroundColor: cardColor,
-                    borderRadius: '10px',
+                    borderRadius: '10px'
                 }}
                 bodyStyle={{
-                    padding: '0px',
                     height: '100%',
                     width: '100%',
+                    padding: '0px',
                 }}
                 bordered={false}
                 hoverable
             >
-                <Row
-                    justify="center"
-                    align="middle"
+                <div
+                    className="d-flex justify-content-center align-items-center w-100 h-100"
                 >
-                    <Col
-                        xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}
-                        style={{
-                            padding: '10px'
-                        }}
+                    <Row
+                        className="w-100 h-100"
                     >
-                        <Form
-                            name="booknow"
-                            labelCol={{
-                                span: 24,
+                        <Col
+                            xs={0} sm={0} md={12} lg={12} xl={12} xxl={12}
+                            style={{
+                                padding: '10px',
+                                maxWidth: '40vw'
                             }}
-                            wrapperCol={{
-                                span: 24,
-                            }}
-                            autoComplete="off"
-                            onFinish={onSubmit}
-                            className="book-now-form"
                         >
-                            <Form.Item
-                                label='Roll Number'
-                                name='rollno'
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please enter your roll number',
-                                    },
-                                ]}
+                            <div
                                 style={{
-                                    margin: '2px 0'
-                                }}
-                            >
-                                <Input style={{
-                                    border: 'none'
-                                }} placeholder='Roll Number' />
-
-                            </Form.Item>
-                            <Form.Item
-                                label='Email'
-                                name='email'
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Please enter your email',
-                                    },
-                                ]}
-                                style={{
-                                    margin: '2px 0'
-                                }}
-                            >
-                                <Input style={{
-                                    border: 'none'
-                                }} placeholder='Email' />
-                            </Form.Item>
-                            <Form.Item
-                                label='Preferences'
-                                name='preferences'
-                                style={{
+                                    height: '100%',
                                     width: '100%',
-                                    margin: '2px 0'
+                                    backgroundColor: 'transparent',
+                                    padding: '10px',
+                                    borderRadius: '5px',
                                 }}
+                                className="d-flex justify-content-center align-items-center"
                             >
-                                <Row
-                                    justify="space-between"
-                                    align="start"
-                                    gutter={[16, 16]}
-                                >
-                                    <Col
-                                        span={12}
-                                    >
-                                        <div
-                                            className="d-flex flex-column"
-                                        >
-                                            <Button
-                                                type="primary"
-                                                style={{
-                                                    backgroundColor: electricity ? highlightBg : bgColor,
-                                                    color: electricity ? darkColor : lightColor,
-                                                    width: '100%',
-                                                    boxShadow: 'none',
-                                                }}
-                                                icon={
-                                                    <BsLightningCharge />
-                                                }
-                                                onClick={() => {
-                                                    setElectricity(!electricity);
-                                                }}
-                                            />
-                                            <p
-                                                style={{
-                                                    fontSize: '9px',
-                                                    textAlign: "center",
-                                                    margin: '4px 0px'
-                                                }}
-                                            >With electricity board</p>
-                                        </div>
-                                    </Col>
-                                    <Col
-                                        span={12}
-                                    >
-                                        <div
-                                            className="d-flex flex-column"
-                                        >
-                                            <Button
-                                                type="primary"
-                                                style={{
-                                                    backgroundColor: computer ? highlightBg : bgColor,
-                                                    color: computer ? darkColor : lightColor,
-                                                    width: '100%',
-                                                    boxShadow: 'none',
-                                                }}
-                                                icon={
-                                                    <HiOutlineDesktopComputer />
-                                                }
-                                                onClick={() => {
-                                                    setComputer(!computer);
-                                                }}
-                                            />
-                                            <p
-                                                style={{
-                                                    fontSize: '9px',
-                                                    textAlign: "center",
-                                                    margin: '4px 0px'
-                                                }}
-                                            >With Computer</p>
-                                        </div>
-                                    </Col>
-                                </Row>
-                            </Form.Item>
-                            <Form.Item
-                                name='start_time'
-                                label='Start Time'
-                                rules={[
-                                    {
-                                        validator: () => {
-                                            if (timeSelectedKey === '0') {
-                                                return Promise.reject(new Error('Please select a time'));
-                                            }
-                                            return Promise.resolve();
-                                        }
-                                    }
-                                ]}
-                                style={{
-                                    margin: '2px 0'
-                                }}
-                                required
-                            >
-                                <Dropdown
-                                    trigger={['click']}
-                                    menu={{
-                                        onClick: ({ key }) => handleTimeMenuItemClick(key),
-                                        items: timeMenuItems,
-                                        defaultSelectedKeys: [timeSelectedKey],
-                                        selectedKeys: [timeSelectedKey],
-                                        style: {
-                                            boxShadow: 'none',
+                                <Lottie
+                                    options={{
+                                        loop: true,
+                                        autoplay: true,
+                                        animationData: animationData,
+                                        rendererSettings: {
+                                            preserveAspectRatio: 'xMidYMid meet'
                                         }
                                     }}
-                                >
-                                    <Button
-                                        size="large"
-                                        type="primary"
-                                        icon={<BsClock
-                                            style={{
-                                                marginRight: '5px',
-                                            }}
-                                        />}
-                                        style={{
-                                            width: '100%',
-                                            boxShadow: 'none',
-                                            color: darkColor,
-                                        }}
-                                    >
-                                        {
-                                            time === 0 ? 'Choose Start Time' : `${time} minutes`
-                                        }
-                                    </Button>
-                                </Dropdown>
-                            </Form.Item>
-                            <Form.Item
-                                name='duration'
-                                label='Duration'
-                                rules={[
-                                    {
-                                        validator: () => {
-                                            if (durationSelectedKey === '0') {
-                                                return Promise.reject(new Error('Please select the duration'));
-                                            }
-                                            return Promise.resolve();
-                                        }
-                                    }
-                                ]}
-                                required
-                                style={{
-                                    margin: '2px 0 8px 0'
-                                }}
-                            >
-                                <Dropdown
-                                    trigger={['click']}
-                                    menu={{
-                                        onClick: ({ key }) => handleDurationMenuItemClick(key),
-                                        items: durationMenuItems,
-                                        defaultSelectedKeys: [durationSelectedKey],
-                                        selectedKeys: [durationSelectedKey],
-                                        style: {
-                                            boxShadow: 'none',
-                                        }
-                                    }}
-                                >
-                                    <Button
-                                        size="large"
-                                        type="primary"
-                                        icon={<BsClock
-                                            style={{
-                                                marginRight: '5px',
-                                            }}
-                                        />}
-                                        style={{
-                                            width: '100%',
-                                            boxShadow: 'none',
-                                            color: darkColor,
-                                        }}
-                                    >
-                                        {
-                                            duration === 0 ? 'Choose Duration' : `${duration} hours`
-                                        }
-                                    </Button>
-                                </Dropdown>
-                            </Form.Item>
-                            <Form.Item
-                                name='space'
-                                rules={[
-                                    {
-                                        validator: () => {
-                                            if (spaceSelectedKey === '0') {
-                                                return Promise.reject(new Error('Please select a space'));
-                                            }
-                                            return Promise.resolve();
-                                        }
-                                    }
-                                ]}
-                                style={{
-                                    margin: '2px 0 8px 0'
-                                }}
-                            >
-                                <Dropdown
-                                    trigger={['click']}
-                                    menu={{
-                                        onClick: ({ key }) => handleSpaceMenuItemClick(key),
-                                        items: spaceMenuItems,
-                                        defaultSelectedKeys: [spaceSelectedKey],
-                                        selectedKeys: [spaceSelectedKey],
-                                        style: {
-                                            boxShadow: 'none',
-                                        }
-                                    }}
-                                >
-                                    <Button
-                                        size="large"
-                                        type="primary"
-                                        icon={<BsBuildings
-                                            style={{
-                                                marginRight: '5px',
-                                            }}
-                                        />}
-                                        style={{
-                                            width: '100%',
-                                            boxShadow: 'none',
-                                            color: darkColor,
-                                        }}
-                                    >
-                                        {space}
-                                    </Button>
-                                </Dropdown>
-                            </Form.Item>
-                            <Form.Item>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
+                                    isClickToPauseDisabled={true}
                                     style={{
-                                        backgroundColor: darkColor,
-                                        width: '100%',
-                                        marginTop: '10px',
-                                        boxShadow: 'none',
+                                        cursor: 'default',
                                     }}
-                                    size="large"
-                                    loading={loading}
+                                    isStopped={false}
+                                    isPaused={false}
+                                />
+                            </div>
+                        </Col>
+                        <Col
+                            xs={24} sm={24} md={12} lg={12} xl={12} xxl={12}
+                            style={{
+                                padding: '10px'
+                            }}
+                        >
+                            <div
+                                style={{
+                                    height: '100%',
+                                    width: '100%',
+                                    backgroundColor: itemColor,
+                                    borderRadius: '5px',
+                                    padding: '10px',
+                                }}
+                                className="d-flex flex-column justify-content-around align-items-center"
+                            >
+                                <Card
+                                    bodyStyle={{
+                                        padding: '16px',
+                                    }}
+                                    style={{
+                                        backgroundColor: cardColor,
+                                        border: `2px solid ${cardColor}`,
+                                        borderRadius: '8px',
+                                        width: '100%',
+                                    }}
+                                    hoverable
+                                    className="hoverable-antd-card"    
                                 >
-                                    Book Now
-                                </Button>
-                            </Form.Item>
+                                    <Typography.Title
+                                        level={
+                                            spaceSelectedKey === '' ? 5:4
+                                        }
+                                        style={{
+                                            margin: '0px',
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        {
+                                            spaceSelectedKey === '' ? 'Please choose a space to view available seats': `Available Seats: ${avlSeats}`
+                                        }
+                                    </Typography.Title>
 
-                        </Form>
+                                </Card>
+                                <Form
+                                    name="booknow"
+                                    labelCol={{
+                                        span: 24,
+                                    }}
+                                    wrapperCol={{
+                                        span: 24,
+                                    }}
+                                    autoComplete="off"
+                                    onFinish={onSubmit}
+                                    className="book-now-form"
+                                >
+                                    <Form.Item
+                                        label='Roll Number'
+                                        name='rollno'
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Please enter your roll number',
+                                            },
+                                        ]}
+                                        style={{
+                                            margin: '2px 0'
+                                        }}
+                                    >
+                                        <Input style={{
+                                            border: 'none'
+                                        }} placeholder='Roll Number' />
 
-                    </Col>
-                </Row>
+                                    </Form.Item>
+                                    <Form.Item
+                                        label='Email'
+                                        name='email'
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Please enter your email',
+                                            },
+                                        ]}
+                                        style={{
+                                            margin: '2px 0'
+                                        }}
+                                    >
+                                        <Input style={{
+                                            border: 'none'
+                                        }} placeholder='Email' />
+                                    </Form.Item>
+                                    <Form.Item
+                                        label='Preferences'
+                                        style={{
+                                            width: '100%',
+                                            margin: '2px 0'
+                                        }}
+                                    >
+                                        <Row
+                                            justify="space-between"
+                                            align="start"
+                                            gutter={[16, 16]}
+                                        >
+                                            <Col
+                                                span={12}
+                                            >
+                                                <div
+                                                    className="d-flex flex-column"
+                                                >
+                                                    <Button
+                                                        type="primary"
+                                                        style={{
+                                                            backgroundColor: electricity ? highlightBg : bgColor,
+                                                            color: electricity ? darkColor : lightColor,
+                                                            width: '100%',
+                                                            boxShadow: 'none',
+                                                        }}
+                                                        icon={
+                                                            <BsLightningCharge />
+                                                        }
+                                                        onClick={() => {
+                                                            setElectricity(!electricity);
+                                                        }}
+                                                    />
+                                                    <p
+                                                        style={{
+                                                            fontSize: '9px',
+                                                            textAlign: "center",
+                                                            margin: '4px 0px'
+                                                        }}
+                                                    >With electricity board</p>
+                                                </div>
+                                            </Col>
+                                            <Col
+                                                span={12}
+                                            >
+                                                <div
+                                                    className="d-flex flex-column"
+                                                >
+                                                    <Button
+                                                        type="primary"
+                                                        style={{
+                                                            backgroundColor: computer ? highlightBg : bgColor,
+                                                            color: computer ? darkColor : lightColor,
+                                                            width: '100%',
+                                                            boxShadow: 'none',
+                                                        }}
+                                                        icon={
+                                                            <HiOutlineDesktopComputer />
+                                                        }
+                                                        onClick={() => {
+                                                            setComputer(!computer);
+                                                        }}
+                                                    />
+                                                    <p
+                                                        style={{
+                                                            fontSize: '9px',
+                                                            textAlign: "center",
+                                                            margin: '4px 0px'
+                                                        }}
+                                                    >With Computer</p>
+                                                </div>
+                                            </Col>
+                                        </Row>
+                                    </Form.Item>
+                                    <Form.Item
+                                        name='start_time'
+                                        label='Start Time'
+                                        rules={[
+                                            {
+                                                validator: () => {
+                                                    if (timeSelectedKey === 'T0') {
+                                                        return Promise.reject(new Error('Please select a time'));
+                                                    }
+                                                    return Promise.resolve();
+                                                }
+                                            }
+                                        ]}
+                                        style={{
+                                            margin: '2px 0'
+                                        }}
+                                        required
+                                    >
+                                        <Dropdown
+                                            trigger={['click']}
+                                            menu={{
+                                                onClick: ({ key }) => handleTimeMenuItemClick(key),
+                                                items: timeMenuItems,
+                                                defaultSelectedKeys: [timeSelectedKey],
+                                                selectedKeys: [timeSelectedKey],
+                                                style: {
+                                                    boxShadow: 'none',
+                                                }
+                                            }}
+                                        >
+                                            <Button
+                                                size="large"
+                                                type="primary"
+                                                icon={<BsClock
+                                                    style={{
+                                                        marginRight: '5px',
+                                                    }}
+                                                />}
+                                                style={{
+                                                    width: '100%',
+                                                    boxShadow: 'none',
+                                                    color: darkColor,
+                                                }}
+                                            >
+                                                {
+                                                    time === 0 ? 'Choose Start Time' : `${time} minutes`
+                                                }
+                                            </Button>
+                                        </Dropdown>
+                                    </Form.Item>
+                                    <Form.Item
+                                        name='duration'
+                                        label='Duration'
+                                        rules={[
+                                            {
+                                                validator: () => {
+                                                    if (durationSelectedKey === 'D0') {
+                                                        return Promise.reject(new Error('Please select the duration'));
+                                                    }
+                                                    return Promise.resolve();
+                                                }
+                                            }
+                                        ]}
+                                        required
+                                        style={{
+                                            margin: '2px 0 8px 0'
+                                        }}
+                                    >
+                                        <Dropdown
+                                            trigger={['click']}
+                                            menu={{
+                                                onClick: ({ key }) => handleDurationMenuItemClick(key),
+                                                items: durationMenuItems,
+                                                defaultSelectedKeys: [durationSelectedKey],
+                                                selectedKeys: [durationSelectedKey],
+                                                style: {
+                                                    boxShadow: 'none',
+                                                }
+                                            }}
+                                        >
+                                            <Button
+                                                size="large"
+                                                type="primary"
+                                                icon={<GiDuration
+                                                    style={{
+                                                        marginRight: '5px',
+                                                    }}
+                                                />}
+                                                style={{
+                                                    width: '100%',
+                                                    boxShadow: 'none',
+                                                    color: darkColor,
+                                                }}
+                                            >
+                                                {
+                                                    duration === 0 ? 'Choose Duration' : `${duration} hours`
+                                                }
+                                            </Button>
+                                        </Dropdown>
+                                    </Form.Item>
+                                    <Form.Item
+                                        name='space'
+                                        rules={[
+                                            {
+                                                validator: () => {
+                                                    if (spaceSelectedKey === '') {
+                                                        return Promise.reject(new Error('Please select a space'));
+                                                    }
+                                                    return Promise.resolve();
+                                                }
+                                            }
+                                        ]}
+                                        style={{
+                                            margin: '2px 0 8px 0'
+                                        }}
+                                    >
+                                        <Dropdown
+                                            trigger={['click']}
+                                            menu={{
+                                                onClick: ({ key }) => handleSpaceMenuItemClick(key),
+                                                items: spaceMenuItems,
+                                                defaultSelectedKeys: [spaceSelectedKey],
+                                                selectedKeys: [spaceSelectedKey],
+                                                style: {
+                                                    boxShadow: 'none',
+                                                }
+                                            }}
+                                        >
+                                            <Button
+                                                size="large"
+                                                type="primary"
+                                                icon={<BsBuildings
+                                                    style={{
+                                                        marginRight: '5px',
+                                                    }}
+                                                />}
+                                                style={{
+                                                    width: '100%',
+                                                    boxShadow: 'none',
+                                                    color: darkColor,
+                                                }}
+                                            >
+                                                {space}
+                                            </Button>
+                                        </Dropdown>
+                                    </Form.Item>
+                                    <Form.Item>
+                                        <Button
+                                            type="primary"
+                                            htmlType="submit"
+                                            style={{
+                                                backgroundColor: darkColor,
+                                                width: '100%',
+                                                marginTop: '10px',
+                                                boxShadow: 'none',
+                                            }}
+                                            size="large"
+                                            loading={loading}
+                                        >
+                                            Book Now
+                                        </Button>
+                                    </Form.Item>
+
+                                </Form>
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
             </Card>
-
-
-
         </div>
     );
 }

@@ -25,6 +25,10 @@ const bookingSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'space',
         },
+        expiresAt: {
+            type: String,
+            required: true,
+        },
         timeOpted: {
             type: String,
             required: true,
@@ -33,14 +37,14 @@ const bookingSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        isACOpted: {
-            type: Boolean,
-            default: false,
-        },
         isComputerOpted: {
             type: Boolean,
             default: false,
         },
+        price: {
+            type: Number,
+            default: 0
+        }
     },
     {
         timestamps: true,
