@@ -13,5 +13,6 @@ module.exports = {
         PENDING: "Pending",
         APPROVED: "Approved",
         CANCELLED: "Cancelled",
+        COMPLETED: "Completed",
     }
 }

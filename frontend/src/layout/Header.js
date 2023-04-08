@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
 import { Row, Col, Dropdown, Button, message } from "antd";
 import { BsBuildings, BsCursorFill } from "react-icons/bs";
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { user_roles } from "../constants/user_roles"
 import { darkColor, highlightBg, itemColor, lightColor } from "../constants/colors";
 import { _fetch } from "../_fetch"
-import { useDispatch } from "react-redux";
 import { changeSelectedSpace } from "../store/action/space";
 
 function Header() {
     const dispatch = useDispatch();
     const { role, organization } = useSelector(state => state.user);
+    const toggle = useSelector(state => state.toggle);
     const [selectedKey, setSelectedKey] = useState('1');
     const [space, setSpace] = useState('Choose Space');
     const [spaces, setSpaces] = useState([]);
     const [loading, setLoading] = useState(false);
     const isDisabled = role !== user_roles.ADMIN || loading;
 
-    const init = async () => {
+    const init = async (toDispatch = true) => {
         try {
             setLoading(true);
             if (role === user_roles.ADMIN) {
@@ -28,9 +28,11 @@ function Header() {
                 if (res.status === 200) {
                     setSpaces(res.response);
                     if (res.response.length > 0) {
-                        setSelectedKey(res.response[0]._id);
-                        setSpace(res.response[0].name);
-                        dispatch(changeSelectedSpace(res.response[0]));
+                        if (toDispatch){
+                            setSelectedKey(res.response[0]._id);
+                            setSpace(res.response[0].name);
+                            dispatch(changeSelectedSpace(res.response[0]));
+                        }
                     }
                 } else {
                     message.error(res.response);
@@ -81,8 +83,8 @@ function Header() {
     }
 
     useEffect(() => {
-        init();
-    }, []);
+        init(toggle.toDispatchSpace);
+    }, [toggle]);
 
     return (
         <div>

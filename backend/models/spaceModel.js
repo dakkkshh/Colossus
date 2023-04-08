@@ -26,6 +26,15 @@ const spaceSchema = new mongoose.Schema(
             ref: 'seat',
             default: [],
         },
+        isPaid: {
+            type: Boolean,
+            default: false,
+            required: true,
+        },
+        prices: {
+            type: [Number],
+            default: [],
+        }
     },
     {
         timestamps: true,

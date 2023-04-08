@@ -9,8 +9,13 @@ import { seat_status } from "../constants/seat_status";
 import { _fetch } from "../_fetch";
 import { accentColor } from "../constants/colors";
 import { BulbOutlined } from '@ant-design/icons';
+import { useDispatch, useSelector } from "react-redux";
+import { updateToggle } from "../store/action/toggle";
 
 export default function ManageSpaces() {
+    const dispatch = useDispatch();
+    const toggle = useSelector(state => state.toggle);
+    const space = useSelector(state => state.space);
     const [loading, setLoading] = useState(false);
     const [visible, setVisible] = useState(false);
     const [isWifi, setIsWifi] = useState(false);
@@ -65,6 +70,10 @@ export default function ManageSpaces() {
             if (res.status === 200) {
                 await init();
                 setVisible(false);
+                dispatch(updateToggle({
+                    toggle: !toggle.toggle,
+                    toDispatchSpace: false
+                }));
                 message.success('Space added successfully');
             } else {
                 message.error(res.response);
@@ -88,6 +97,10 @@ export default function ManageSpaces() {
             res = await res.json();
             if (res.status === 200){
                 message.success(res.response);
+                dispatch(updateToggle({
+                    toggle: !toggle.toggle,
+                    toDispatchSpace: selectedSpace?._id === space?._id,
+                }));
                 setSelectedSpace(null);
                 await init();
             } else {
