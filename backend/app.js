@@ -12,6 +12,8 @@ const log = require('./logger');
 var userRouter = require('./routes/user');
 var spaceRouter = require('./routes/space');
 const userModel = require('./models/userModel');
+const bookingModel = require('./models/bookingModel');
+const bookingRouter = require('./routes/booking');
 
 var app = express();
 
@@ -73,6 +75,7 @@ app.use((req, res, next) => {
 //Routes
 app.use('/api/user', userRouter);
 app.use('/api/space', spaceRouter);
+app.use('/api/booking', bookingRouter);
 
 
 

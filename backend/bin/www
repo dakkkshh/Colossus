@@ -4,7 +4,9 @@ var log = require('../logger');
 var http = require('http');
 const socketIO = require('socket.io');
 const spaceModel = require('../models/spaceModel');
+const bookingModel = require('../models/bookingModel');
 const {initSocket} = require('../socket');
+const { booking_status } = require('../constants');
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
@@ -32,17 +34,67 @@ io.on('connection', (socket) => {
 			log.error('Failed to fetch data:', error);
 		}
 	});
-	socket.on('homeDataUpdated', async (id) => {
+	socket.on('fetchUpdatedHomeData', async (id) => {
 		try {
 			let space = await spaceModel.findById(id).populate('seats');
 			if (!space){
 				log.error('Space not found');
 			} else {
-				socket.emit('homeDataUpdated', space);
+				socket.emit('updatedHomeData', space);
 			}
 		} catch (error) {
-			log.error('Failed to fetch data:', error);	
-		}
+			log.error('Failed to fetch data:', error);
+		}	
+	});
+	socket.on('getInitialBookinData', async (id) => {
+		try {
+			let approvedBookings = await bookingModel.find({
+				space: id,
+				bookingStatus: booking_status.APPROVED,
+			}).sort({createdAt: -1}).populate('seat');
+
+			let pastBookings = await bookingModel.find({
+				space: id,
+				bookingStatus: booking_status.COMPLETED,
+			}).sort({createdAt: -1}).populate('seat');
+
+			if (approvedBookings && pastBookings) {
+				socket.emit('initialBookingData', {
+					approvedBookings,
+					pastBookings,
+					space_id: id,
+				});
+			} else {
+				log.error('Booking not found');
+			}
+		} catch (error) {
+			log.error('Failed to fetch data:', error);
+		}	
+	});
+	socket.on('fetchUpdatedBookData', async (id) => {
+		try {
+			let approvedBookings = await bookingModel.find({
+				space: id,
+				bookingStatus: booking_status.APPROVED,
+			}).sort({createdAt: -1}).populate('seat');
+
+			let pastBookings = await bookingModel.find({
+				space: id,
+				bookingStatus: booking_status.COMPLETED,
+			}).sort({createdAt: -1}).populate('seat');
+
+			if (approvedBookings && pastBookings) {
+				socket.emit('updatedBookData', {
+					approvedBookings,
+					pastBookings,
+					space_id: id,
+				});
+			} else {
+				log.error('Booking not found');
+			}
+		} catch (error) {
+			log.error('Failed to fetch data:', error);
+		}		
 	});
 	socket.on('disconnect', () => {
 		// log.info('A client disconnected');

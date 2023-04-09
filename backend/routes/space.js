@@ -9,6 +9,7 @@ const {emitToAllClients} = require('../socket');
 const { success, error, isAdmin } = require('../response.js');
 const log = require('../logger');
 const { user_roles } = require('../constants');
+const bookingModel = require('../models/bookingModel');
 
 var router = express.Router();
 
@@ -189,6 +190,9 @@ router
                     for (let i = 0; i < space.seats?.length; i++) {
                         await seatModel.findByIdAndDelete(space.seats[i]);
                     }
+                    await bookingModel.deleteMany({
+                        space: id
+                    });
                     success(res, 'Space deleted successfully');
                 }
             } catch (err) {

@@ -13,6 +13,7 @@ import * as animationData from '../assets/lottie/booknow.json';
 const { Title } = Typography;
 function BookNow() {
     const [spaceSelectedKey, setspaceSelectedKey] = useState('');
+    const [showInstallButton, setShowInstallButton] = useState(false);
     const [avlSeats, setAvlSeats] = useState(0);
     const [timeSelectedKey, setTimeSelectedKey] = useState('T0');
     const [durationSelectedKey, setDurationSelectedKey] = useState('D0');
@@ -34,17 +35,25 @@ function BookNow() {
             if (res.status === 200) {
                 const updatedSpaces = res.response?.map((item) => {
                     const avlSeats = item.seats?.reduce((acc, seat) => {
-                        if (seat.seatStatus === seat_status.AVAILABLE){
-                            return acc+1;
+                        if (seat.seatStatus === seat_status.AVAILABLE) {
+                            return acc + 1;
                         }
                         return acc;
-                    },0);
+                    }, 0);
                     return {
                         ...item,
                         available_seats: avlSeats
                     }
                 }, []);
                 setSpaces(updatedSpaces);
+                if (spaceSelectedKey !== ''){
+                    const selectedSpace = updatedSpaces.find(item => item._id === spaceSelectedKey);
+                    if (selectedSpace){
+                        setspaceSelectedKey(selectedSpace._id);
+                        setSpace(selectedSpace.name);
+                        setAvlSeats(selectedSpace.available_seats);
+                    }
+                }
             } else {
                 message.error(res.response);
             }
@@ -53,6 +62,27 @@ function BookNow() {
             message.error('Something went wrong while fetching spaces');
         } finally {
             setLoading(false);
+        }
+    }
+    let deferredPrompt;
+    const handleBeforeInstallPrompt = (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        setShowInstallButton(true);
+    }
+
+    const handleInstallButtonClick = () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(choice => {
+                if (choice.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                deferredPrompt = null;
+                setShowInstallButton(false);
+            });
         }
     }
 
@@ -134,27 +164,43 @@ function BookNow() {
     }
 
 
-    const onSubmit = (values) => {
-        setLoading(true);
-        const timeOpted = moment().add(time, 'minutes').format('YYYY-MM-DD HH:mm:ss');
-        console.log({
-            roll_number: values.rollno,
-            email: values.email,
-            space: spaceSelectedKey,
-            expiresAt: moment(timeOpted).add(duration, 'hours').format('YYYY-MM-DD HH:mm:ss'),
-            timeOpted: timeOpted,
-            isElectricityOpted: electricity,
-            isComputerOpted: computer
-        });
-        message.success('Booking Successful');
-
-        setTimeout(() => {
+    const onSubmit = async (values) => {
+        try {
+            setLoading(true);
+            const timeOpted = moment().add(time, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+            let res = await _fetch(`${process.env.REACT_APP_API_URL}/booking`, {
+                method: 'POST',
+                body: {
+                    roll_number: values.rollno,
+                    email: values.email,
+                    space: spaceSelectedKey,
+                    expiresAt: moment(timeOpted).add(duration, 'hours').format('YYYY-MM-DD HH:mm:ss'),
+                    timeOpted: timeOpted,
+                    isElectricityOpted: electricity,
+                    isComputerOpted: computer
+                }
+            });
+            res = await res.json();
+            if (res.status === 200) {
+                await init();
+                message.success('Booking Successful, please check the mail for more details');
+            } else {
+                message.error(res.response);
+            }
+        } catch (err) {
+            console.log(err);
+            message.error('Something went wrong while booking the seat')
+        } finally {
             setLoading(false);
-        }, 2000);
+        }
     }
 
     useEffect(() => {
         init();
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
     }, []);
 
     return (
@@ -247,11 +293,11 @@ function BookNow() {
                                         width: '100%',
                                     }}
                                     hoverable
-                                    className="hoverable-antd-card"    
+                                    className="hoverable-antd-card"
                                 >
                                     <Typography.Title
                                         level={
-                                            spaceSelectedKey === '' ? 5:4
+                                            spaceSelectedKey === '' ? 5 : 4
                                         }
                                         style={{
                                             margin: '0px',
@@ -259,7 +305,7 @@ function BookNow() {
                                         }}
                                     >
                                         {
-                                            spaceSelectedKey === '' ? 'Please choose a space to view available seats': `Available Seats: ${avlSeats}`
+                                            spaceSelectedKey === '' ? 'Please choose a space to view available seats' : `Available Seats: ${avlSeats}`
                                         }
                                     </Typography.Title>
 
@@ -547,7 +593,6 @@ function BookNow() {
                                             Book Now
                                         </Button>
                                     </Form.Item>
-
                                 </Form>
                             </div>
                         </Col>
