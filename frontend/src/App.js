@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import Bookings from './pages/Bookings';
 import ManageSpaces from './pages/ManageSpaces';
 import AdminPanel from './pages/AdminPanel';
+import BookingConfirmed from './pages/ConfirmedBooking'
 import { message } from 'antd';
 import { _fetch } from './_fetch';
 import { login } from './store/action/user';
@@ -88,6 +89,7 @@ function App() {
         <Routes>
           <Route exact path='/login' element={<Login />} />
           <Route exact path='/booknow' element={<BookNow />} />
+          <Route exact path='/booking-confirmed' element={<BookingConfirmed />} />
           <Route exact path='/' element={<LayoutWrapper children={<Home />} email={email} />} />
           <Route exact path='/profile' element={<LayoutWrapper children={<Profile />} email={email} />} />
           <Route exact path='/bookings' element={<LayoutWrapper children={<Bookings />} email={email} />} />

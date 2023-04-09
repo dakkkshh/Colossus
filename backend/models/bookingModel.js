@@ -44,6 +44,10 @@ const bookingSchema = new mongoose.Schema(
         price: {
             type: Number,
             default: 0
+        },
+        isEmailSent: {
+            type: Boolean,
+            default: false
         }
     },
     {

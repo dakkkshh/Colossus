@@ -17,33 +17,43 @@ const bookingModel = require('./models/bookingModel');
 const bookingRouter = require('./routes/booking');
 const { booking_status } = require('./constants');
 const { seat_status } = require('./constants');
+const { sendEmail } = require('./email/service');
+const { bookingConfirmationMail } = require('./email/emails');
 const cron = require('node-cron');
 const { emitToAllClients } = require('./socket');
 
 var app = express();
 
-async function checkBookings(){
+async function checkBookings() {
 	try {
-		log.info('Checking bookings');
 		let bookings = await bookingModel.find({
-			bookingStatus: booking_status.APPROVED	
-		}).populate('seat');
-		bookings.forEach(booking => {
+			bookingStatus: booking_status.APPROVED
+		}).populate('seat').populate('space');
+		bookings.forEach (async booking => {
 			if (booking.seat?.seatStatus === seat_status.RESERVED) {
 				if (moment().isAfter(moment(booking.timeOpted).add(10, 'minutes'))) {
 					booking.seat.seatStatus = seat_status.AVAILABLE;
-					booking.seat.save();
+					await booking.seat.save();
 					booking.bookingStatus = booking_status.CANCELLED;
-					booking.save();
+					await booking.save();
 					emitToAllClients('getUpdatedHomeData', booking.space);
-                    emitToAllClients('getUpdatedBookData', booking.space);
+					emitToAllClients('getUpdatedBookData', booking.space);
+				}
+				if (moment().isAfter(moment(booking.timeOpted).subtract(5, 'minutes')) && !booking.isEmailSent) {
+					const timeOpted = moment(booking.timeOpted).format('hh:mm A');
+					const html = bookingConfirmationMail(booking.roll_number, booking.seat.seatNumber, timeOpted, booking.space.name, booking._id);
+					await sendEmail(booking.email, 'Booking Confirmation @Colossus', html);
+					booking.isEmailSent = true;
+					await booking.save();
+					emitToAllClients('getUpdatedHomeData', booking.space);
+					emitToAllClients('getUpdatedBookData', booking.space);
 				}
 			} else if (booking.seat?.seatStatus === seat_status.OCCUPIED) {
 				if (moment().isAfter(moment(booking.expiresAt))) {
 					booking.seat.seatStatus = seat_status.AVAILABLE;
-					booking.seat.save();
+					await booking.seat.save();
 					booking.bookingStatus = booking_status.COMPLETED;
-					booking.save();
+					await booking.save();
 					emitToAllClients('getUpdatedHomeData', booking.space);
 					emitToAllClients('getUpdatedBookData', booking.space);
 				}
@@ -54,15 +64,14 @@ async function checkBookings(){
 	}
 }
 
+
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
-    log.info('Connected to DB!');
-	cron.schedule('*/5 * * * *', () => {
-		checkBookings();
-	});
+	log.info('Connected to DB!');
+	cron.schedule('*/1 * * * *', checkBookings);
 })
-.catch (err => {
-    log.error(`DB Connection Error: ${err.message}`);
-});
+	.catch(err => {
+		log.error(`DB Connection Error: ${err.message}`);
+	});
 
 
 mongoose.connection.on('reconnect', () => {
@@ -100,9 +109,9 @@ app.use((req, res, next) => {
 						req.user = doc;
 						return next();
 					} else {
-                        res.clearCookie('jwt');
-					    error(res, 404, 'User not found');
-                    }
+						res.clearCookie('jwt');
+						error(res, 404, 'User not found');
+					}
 				} catch (err) {
 					log.error(err);
 					res.clearCookie('jwt');
@@ -111,7 +120,7 @@ app.use((req, res, next) => {
 			}
 		);
 	} else {
-        next();
+		next();
 	}
 });
 //Routes

@@ -134,4 +134,26 @@ router
             }
         }
     );
+router
+    .route('/confirm/:id')
+        .get(
+            async (req, res) => {
+                try {
+                    const {id} = req.params;
+                    const booking = await bookingModel.findById(id).populate('seat');
+                    if (booking) {
+                        booking.seat.seatStatus = seat_status.OCCUPIED;
+                        await booking.seat.save();
+                        emitToAllClients('getUpdatedHomeData', booking?.space);
+                        emitToAllClients('getUpdatedBookData', booking?.space);
+                        return res.redirect(process.env.APP_HOME + '/booking-confirmed');
+                    } else {
+                        error(res, 404, 'Booking not found');
+                    }
+                } catch (err) {
+                    log.error(err);
+                    error(res);
+                } 
+            }
+        );
 module.exports = router;
