@@ -5,6 +5,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 var mongoose = require('mongoose');
+const moment = require('moment');
 require('dotenv').config();
 
 const { error } = require('./response');
@@ -14,11 +15,50 @@ var spaceRouter = require('./routes/space');
 const userModel = require('./models/userModel');
 const bookingModel = require('./models/bookingModel');
 const bookingRouter = require('./routes/booking');
+const { booking_status } = require('./constants');
+const { seat_status } = require('./constants');
+const cron = require('node-cron');
+const { emitToAllClients } = require('./socket');
 
 var app = express();
 
+async function checkBookings(){
+	try {
+		log.info('Checking bookings');
+		let bookings = await bookingModel.find({
+			bookingStatus: booking_status.APPROVED	
+		}).populate('seat');
+		bookings.forEach(booking => {
+			if (booking.seat?.seatStatus === seat_status.RESERVED) {
+				if (moment().isAfter(moment(booking.timeOpted).add(10, 'minutes'))) {
+					booking.seat.seatStatus = seat_status.AVAILABLE;
+					booking.seat.save();
+					booking.bookingStatus = booking_status.CANCELLED;
+					booking.save();
+					emitToAllClients('getUpdatedHomeData', booking.space);
+                    emitToAllClients('getUpdatedBookData', booking.space);
+				}
+			} else if (booking.seat?.seatStatus === seat_status.OCCUPIED) {
+				if (moment().isAfter(moment(booking.expiresAt))) {
+					booking.seat.seatStatus = seat_status.AVAILABLE;
+					booking.seat.save();
+					booking.bookingStatus = booking_status.COMPLETED;
+					booking.save();
+					emitToAllClients('getUpdatedHomeData', booking.space);
+					emitToAllClients('getUpdatedBookData', booking.space);
+				}
+			}
+		});
+	} catch (err) {
+		log.error(err);
+	}
+}
+
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
     log.info('Connected to DB!');
+	cron.schedule('*/5 * * * *', () => {
+		checkBookings();
+	});
 })
 .catch (err => {
     log.error(`DB Connection Error: ${err.message}`);
@@ -40,6 +80,8 @@ app.use(logger('dev'));
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: false }));
 app.use(cookieParser());
+
+
 
 //Maintain Verified User
 app.use((req, res, next) => {
