@@ -7,6 +7,19 @@ Colossus is a digital platform that streamlines the process of checking for avai
 ## Demo Video Link
 https://drive.google.com/file/d/1DGRaUd2GP7-ENZX0F2iDghO3lPPrHdln/view?usp=drivesdk
 
+## Images
+
+![Admin Admin Panel Add](https://user-images.githubusercontent.com/63851624/230757831-932ea1bc-ca38-41fc-9681-99ad7323e571.png)
+![Admin Admin Panel](https://user-images.githubusercontent.com/63851624/230757837-69750243-5451-488e-b553-e052c2ebf47e.png)
+![Admin Manage Spaces Add](https://user-images.githubusercontent.com/63851624/230757838-f312b7ae-e163-4b83-942c-a95580fe108d.png)
+![Admin Manage Spaces](https://user-images.githubusercontent.com/63851624/230757839-10562ae4-d323-4bb9-aa6b-7b84779ffec9.png)
+![Admin Profile](https://user-images.githubusercontent.com/63851624/230757840-8bff4e3d-bc07-48bc-9ae3-4c6cddecdd10.png)
+![Admin-Bookings](https://user-images.githubusercontent.com/63851624/230757841-b381f2c1-8286-425f-83a3-11aec25a6ef8.png)
+![Admin-Home](https://user-images.githubusercontent.com/63851624/230757843-2e162789-658f-45da-9287-35f24fdf86fa.png)
+![Book Now](https://user-images.githubusercontent.com/63851624/230757845-efa4a464-adf4-4020-aa9c-2562b9b5613b.png)
+![Space Admin Home](https://user-images.githubusercontent.com/63851624/230757849-0ff54e76-1e48-4a20-9989-834f124b0a5a.png)
+![Login](https://user-images.githubusercontent.com/63851624/230757850-238d5246-3767-4333-9c3d-1bdda520e74c.png)
+
 ## Features
 - Real-time Seat Availability Check: The platform would allow students or users to check the availability of seats in real-time, eliminating the need to physically visit the study room or library. Students can simply access the platform from their mobile devices or computers and view the current status of available seats, enabling them to plan their study sessions more efficiently.
 
