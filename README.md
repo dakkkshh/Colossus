@@ -4,8 +4,8 @@ Reserve. Study. Inspire. - Your Preferred Space, Your Ultimate Resource!
 ## Description
 Colossus is a digital platform that streamlines the process of checking for available space in study rooms or libraries, eliminate redundant data entry, and promote fair allocation of seats based on student preferences and requirements.
 
-## Images
-
+## Demo Video Link
+https://drive.google.com/file/d/1DGRaUd2GP7-ENZX0F2iDghO3lPPrHdln/view?usp=drivesdk
 
 ## Features
 - Real-time Seat Availability Check: The platform would allow students or users to check the availability of seats in real-time, eliminating the need to physically visit the study room or library. Students can simply access the platform from their mobile devices or computers and view the current status of available seats, enabling them to plan their study sessions more efficiently.
