@@ -24,6 +24,7 @@ function BookNow() {
     const [loading, setLoading] = useState(false);
     const [electricity, setElectricity] = useState(false);
     const [computer, setComputer] = useState(false);
+    const [form] = Form.useForm();
 
     const init = async () => {
         try {
@@ -183,7 +184,14 @@ function BookNow() {
             res = await res.json();
             if (res.status === 200) {
                 await init();
-                message.success('Booking Successful, please check the mail for more details');
+                message.success('Booking Successful, mail will be sent 5 minutes before the opted time');
+                form.resetFields();
+                setspaceSelectedKey('');
+                setTimeSelectedKey('');
+                setDurationSelectedKey('');
+                setSpace('Choose Space');
+                setTime(0);
+                setDuration(0);
             } else {
                 message.error(res.response);
             }

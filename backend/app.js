@@ -26,6 +26,7 @@ var app = express();
 
 async function checkBookings() {
 	try {
+		log.info('Check Bookings called')
 		let bookings = await bookingModel.find({
 			bookingStatus: booking_status.APPROVED
 		}).populate('seat').populate('space');

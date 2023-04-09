@@ -42,6 +42,7 @@ export default function Bookings(){
             setLoading(false);
         }
     }
+    console.log(data);
 
     useEffect(() => {
         socketing();
@@ -203,7 +204,7 @@ export default function Bookings(){
                                                 color: highlightBg,
                                             }}
                                         >
-                                            {item.seat}
+                                            {item.seat?.seatNumber}
                                         </Typography.Title>
                                         </Col>
                                         <Col
@@ -215,7 +216,7 @@ export default function Bookings(){
                                                     margin: '0px',
                                                 }}
                                             >
-                                                {item.roll}
+                                                {item.roll_number}
                                             </Typography.Title>
                                         </Col>
                                     </Row>
@@ -234,7 +235,7 @@ export default function Bookings(){
                                                 color: highlightBg,
                                             }}
                                         >
-                                            {item.time}
+                                            {moment(item.timeOpted).format('hh:mm A')}
                                         </Typography.Title>
                                         </Col>
                                         <Col
