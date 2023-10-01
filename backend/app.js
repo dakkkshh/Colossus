@@ -65,7 +65,6 @@ async function checkBookings() {
 	}
 }
 
-
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
 	log.info('Connected to DB!');
 	cron.schedule('*/1 * * * *', checkBookings);
