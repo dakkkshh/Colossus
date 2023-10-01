@@ -24,7 +24,9 @@ export default function Home() {
     const socketing = async () => {
         if (!selectedSpace?._id) return;
         try {
-            const socket = io(process.env.REACT_APP_SERVER_URL);
+            const socket = io(process.env.REACT_APP_SERVER_URL, {
+                transports: ['websocket'],
+            });
             socket.emit('getInitialHomeData', selectedSpace?._id);
             socket.on('initialHomeData', (data) => {
                 setSpace(data);

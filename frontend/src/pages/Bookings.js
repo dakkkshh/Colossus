@@ -18,7 +18,9 @@ export default function Bookings(){
     const socketing = async () => {
         if (!selectedSpace?._id) return;
         try {
-            const socket = io(process.env.REACT_APP_SERVER_URL);
+            const socket = io(process.env.REACT_APP_SERVER_URL, {
+                transports: ['websocket'],
+            });
             socket.emit('getInitialBookinData', selectedSpace?._id);
             socket.on('initialBookingData', (payload) => {
                 setData(payload);
