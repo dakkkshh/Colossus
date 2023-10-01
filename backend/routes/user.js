@@ -139,6 +139,7 @@ router
                                     maxAge: process.env.ACCESS_TOKEN_COOKIE_EXPIRY_IN_MILLISECONDS,
                                     httpOnly: JSON.parse(process.env.COOKIE_HTTP_ONLY),
                                     secure: JSON.parse(process.env.COOKIE_SECURE),
+                                    sameSite: "none"
                                 });
                                 success(res, {
                                     _id: user._id,
