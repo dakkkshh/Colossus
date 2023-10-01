@@ -1,12 +1,12 @@
 require('dotenv').config();
-var app = require('../app');
-var log = require('../logger');
+var app = require('./app');
+var log = require('./logger');
 var http = require('http');
 const socketIO = require('socket.io');
-const spaceModel = require('../models/spaceModel');
-const bookingModel = require('../models/bookingModel');
-const {initSocket} = require('../socket');
-const { booking_status } = require('../constants');
+const spaceModel = require('./models/spaceModel');
+const bookingModel = require('./models/bookingModel');
+const {initSocket} = require('./socket');
+const { booking_status } = require('./constants');
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
