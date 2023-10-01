@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "name": "Colossus-server",
+  "builds": [{ "src": "./bin/www", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "./bin/wwww" }]
+}
